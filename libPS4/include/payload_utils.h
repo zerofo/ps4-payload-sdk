@@ -70,6 +70,7 @@ struct kpayload_dump_args {
 
 struct kpayload_firmware_info {
   uint16_t fw_version;
+  uint16_t spoof_fw_version;
 };
 
 struct kpayload_firmware_args {
@@ -140,6 +141,11 @@ static inline __attribute__((always_inline)) void writeCr0(uint64_t cr0) {
   mmap_patch_1 = &kernel_ptr[K##x##_MMAP_SELF_1];                           \
   mmap_patch_2 = &kernel_ptr[K##x##_MMAP_SELF_2];                           \
   mmap_patch_3 = &kernel_ptr[K##x##_MMAP_SELF_3];
+
+#define sdk_macro(x)                                                       \
+  kernel_base = &((uint8_t *)__readmsr(0xC0000082))[-K##x##_XFAST_SYSCALL]; \
+  kernel_ptr = (uint8_t *)kernel_base;
+  sdk_ver_patch = &kernel_ptr[K##x##_SDK_VERSION_PATCH];  
 
 #define aslr_macro(x)                                                       \
   kernel_base = &((uint8_t *)__readmsr(0xC0000082))[-K##x##_XFAST_SYSCALL]; \
@@ -226,6 +232,7 @@ int get_memory_dump(uint64_t kaddr, uint64_t *dump, size_t size);
 int jailbreak();
 int mmap_patch();
 int disable_aslr();
+int sdk_spoofer();
 int kernel_clock(uint64_t value);
 int enable_browser();
 int spoof_target_id(uint8_t id);

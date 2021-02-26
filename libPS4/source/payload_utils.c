@@ -200,6 +200,24 @@ int kpayload_aslr(struct thread *td, struct kpayload_firmware_args *args) {
   return 0;
 }
 
+int kpayload_sdk(struct thread *td, struct kpayload_firmware_args *args) {
+  UNUSED(td);
+  void *kernel_base;
+  uint8_t *kernel_ptr;
+  uint16_t sdk_ver_patch
+  uint16_t fw_version = args->kpayload_firmware_info->fw_version;
+  uint16_t spoof_fw_version = args->kpayload_firmware_info->spoof_fw_version;
+  // NOTE: This is a C preprocessor macro
+  build_kpayload(fw_version, sdk_macro);
+
+  uint64_t cr0 = readCr0();
+  writeCr0(cr0 & ~X86_CR0_WP);
+  *(int*)(kernel_base + sdk_ver_patch) = spoof_fw_version;
+  writeCr0(cr0);
+
+  return 0;
+}
+
 int kpayload_kernel_clock(struct thread *td, struct kpayload_kclock_args *args) {
   UNUSED(td);
   void *kernel_base;
@@ -392,6 +410,13 @@ int disable_aslr() {
   kpayload_firmware_info.fw_version = get_firmware();
   return kexec(&kpayload_aslr, &kpayload_firmware_info);
 }
+
+int sdk_spoofer(uint16_t fw_version) {
+  struct kpayload_firmware_info kpayload_firmware_info;
+  kpayload_firmware_info.fw_version = get_firmware();
+  kpayload_firmware_info.spoof_fw_version = fw_version;
+  return kexec(&kpayload_sdk, &kpayload_firmware_info);
+} 
 
 int kernel_clock(uint64_t set_time) {
   struct kpayload_kclock_info kpayload_kclock_info;
